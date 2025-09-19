@@ -16,6 +16,14 @@ interface ApprovalItem {
   status: ApprovalStatus;
 }
 
+interface InvoiceRow {
+  id: string;
+  client: string;
+  amount: string;
+  due: string;
+  status: 'Pending' | 'Paid' | string;
+}
+
 const initialApprovals: ApprovalItem[] = [
   {
     id: 'REQ-001',
@@ -52,12 +60,35 @@ export default function AdminFinancePage() {
   const [activeTab, setActiveTab] = useState<'Overview' | 'Invoices' | 'Payment Plans' | 'Approvals' | 'Client Health'>('Approvals');
   const [invoiceSubtab, setInvoiceSubtab] = useState<'Pending & Overdue' | 'Invoice History'>('Pending & Overdue');
   const [invoiceQuery, setInvoiceQuery] = useState('');
+  const [openInvoice, setOpenInvoice] = useState<InvoiceRow | null>(null);
 
   const pendingCount = useMemo(() => items.filter(i => i.status === 'pending').length, [items]);
 
   const updateStatus = (id: string, status: ApprovalStatus) => {
     setItems(prev => prev.map(i => (i.id === id ? { ...i, status } : i)));
   };
+
+  const invoiceData = useMemo(() => {
+    const pending: InvoiceRow[] = [
+      { id: 'INV-001', client: 'Tech Corp Ltd', amount: '$15,000', due: '2024-09-25', status: 'Pending' },
+      { id: 'INV-002', client: 'StartupXYZ', amount: '$8,500', due: '2024-09-15', status: '4 days overdue' },
+      { id: 'INV-003', client: 'Global Industries', amount: '$22,000', due: '2024-09-20', status: '1 days overdue' },
+      { id: 'INV-004', client: 'Innovation Labs', amount: '$12,000', due: '2024-09-30', status: 'Pending' },
+    ];
+    const history: InvoiceRow[] = [
+      { id: 'INV-093', client: 'Fortune 500', amount: '$40,000', due: '2024-08-20', status: 'Paid' },
+      { id: 'INV-092', client: 'Acme Corp', amount: '$9,200', due: '2024-08-18', status: 'Paid' },
+      { id: 'INV-091', client: 'StartupXYZ', amount: '$6,300', due: '2024-08-10', status: 'Paid' },
+    ];
+    return { pending, history, all: [...pending, ...history] };
+  }, []);
+
+  const currentInvoices = (invoiceSubtab === 'Pending & Overdue' ? invoiceData.pending : invoiceData.history).filter((row) =>
+    invoiceQuery
+      ? row.id.toLowerCase().includes(invoiceQuery.toLowerCase()) ||
+        row.client.toLowerCase().includes(invoiceQuery.toLowerCase())
+      : true
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,14 +100,6 @@ export default function AdminFinancePage() {
             <p className="text-gray-600 mt-1">Monitor your financial performance and manage cash flow</p>
           </div>
           <div className="flex items-center gap-3">
-            <select
-              value={timeframe}
-              onChange={(e) => setTimeframe(e.target.value as 'Monthly' | 'Weekly')}
-              className="px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm"
-            >
-              <option>Monthly</option>
-              <option>Weekly</option>
-            </select>
             <button className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
@@ -91,7 +114,7 @@ export default function AdminFinancePage() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
           <div className="flex items-center gap-1 px-2 py-2 overflow-x-auto">
-            {(['Overview', 'Invoices', 'Payment Plans', 'Approvals', 'Client Health'] as const).map((tab) => (
+            {(['Invoices', 'Approvals', 'Client Health'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -230,7 +253,7 @@ export default function AdminFinancePage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3 text-gray-500">
-                          <button className="hover:text-gray-700" title="View">
+                          <button className="hover:text-gray-700" title="View" onClick={() => setOpenInvoice({ id: row.id, client: row.client, amount: row.amount, due: row.due, status: row.status })}>
                             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -342,7 +365,7 @@ export default function AdminFinancePage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3 text-gray-500">
-                            <button className="hover:text-gray-700" title="View">
+                            <button className="hover:text-gray-700" title="View" onClick={() => setOpenInvoice({ id: row.id, client: row.client, amount: row.amount, due: row.due, status: row.status })}>
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -372,6 +395,106 @@ export default function AdminFinancePage() {
       )}
 
       <div className="h-10" />
+
+      {openInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpenInvoice(null)} />
+          <div role="dialog" aria-modal="true" className="relative bg-white w-full max-w-2xl mx-4 rounded-2xl shadow-xl border border-gray-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Invoice {openInvoice.id}</h3>
+              <button onClick={() => setOpenInvoice(null)} className="p-2 rounded-md hover:bg-gray-100" aria-label="Close invoice modal">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Invoice number</p>
+                  <p className="font-medium text-gray-900">{openInvoice.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Invoice date</p>
+                  <p className="font-medium text-gray-900">2024-09-01</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Currency</p>
+                  <p className="font-medium text-gray-900">USD</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Payment terms</p>
+                  <p className="font-medium text-gray-900">Net 15 • Due {openInvoice.due}</p>
+                  <p className="text-xs text-gray-500">Methods: Card, ACH • Late fee: 1.5%/mo</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <p className="text-sm text-gray-500">Seller</p>
+                  <p className="font-medium text-gray-900">Canvax, Inc.</p>
+                  <p className="text-sm text-gray-700">123 Market St, Suite 500, San Francisco, CA</p>
+                  <p className="text-sm text-gray-700">Tax ID: 12-3456789</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <p className="text-sm text-gray-500">Buyer</p>
+                  <p className="font-medium text-gray-900">{openInvoice.client}</p>
+                  <p className="text-sm text-gray-700">Client Address, City, Country</p>
+                  <p className="text-sm text-gray-700">Tax ID: —</p>
+                </div>
+              </div>
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <table className="min-w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left px-4 py-2 text-sm font-medium text-gray-600">Description</th>
+                      <th className="text-right px-4 py-2 text-sm font-medium text-gray-600">Qty</th>
+                      <th className="text-right px-4 py-2 text-sm font-medium text-gray-600">Unit Price</th>
+                      <th className="text-right px-4 py-2 text-sm font-medium text-gray-600">Line Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { desc: 'Subscription - Pro Plan', qty: 1, unit: openInvoice.amount, total: openInvoice.amount },
+                      { desc: 'Onboarding & Support', qty: 1, unit: '$0', total: '$0' },
+                    ].map((it) => (
+                      <tr key={it.desc} className="border-b border-gray-100">
+                        <td className="px-4 py-2 text-gray-800">{it.desc}</td>
+                        <td className="px-4 py-2 text-right text-gray-800">{it.qty}</td>
+                        <td className="px-4 py-2 text-right text-gray-800">{it.unit}</td>
+                        <td className="px-4 py-2 text-right font-medium text-gray-900">{it.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-end">
+                <div className="w-full sm:w-80 space-y-2">
+                  <div className="flex justify-between text-sm text-gray-700">
+                    <span>Subtotal</span>
+                    <span>{openInvoice.amount}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-700">
+                    <span>Discount</span>
+                    <span>$0</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-700">
+                    <span>Tax (8%)</span>
+                    <span>$0</span>
+                  </div>
+                  <div className="border-top border-gray-200 pt-2 flex justify-between text-gray-900 font-semibold">
+                    <span>Total</span>
+                    <span>{openInvoice.amount}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex items-center justify-end gap-3">
+              <button className="px-4 py-2 rounded-lg text-sm font-medium text-black border border-gray-200 hover:bg-gray-100" onClick={() => setOpenInvoice(null)}>Close</button>
+              <button className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Download PDF</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
